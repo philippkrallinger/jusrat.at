@@ -12,7 +12,6 @@ export default function Chat() {
   const [error, setError] = useState<string | null>(null);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // Nachrichten laden
   async function loadMessages() {
     try {
       setLoading(true);
@@ -20,9 +19,10 @@ export default function Chat() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error ?? "Fehler beim Laden");
       setMessages(Array.isArray(data.messages) ? data.messages : []);
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
       console.error(e);
-      setError(e?.message ?? "Unbekannter Fehler beim Laden");
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -30,11 +30,9 @@ export default function Chat() {
 
   useEffect(() => {
     loadMessages();
-    // Cursor ins Textfeld
     taRef.current?.focus();
   }, []);
 
-  // Absenden (per Formular)
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -55,26 +53,22 @@ export default function Chat() {
       });
 
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data?.error ?? "Fehler beim Senden");
-      }
+      if (!res.ok) throw new Error(data?.error ?? "Fehler beim Senden");
 
-      // Eingabefeld leeren & neu laden
       setText("");
       await loadMessages();
       taRef.current?.focus();
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
       console.error(e);
-      setError(e?.message ?? "Netzwerkfehler");
+      setError(msg);
     } finally {
       setSending(false);
     }
   }
 
-  // Strg/Cmd+Enter sendet
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-      // „künstlich“ submitten
       (e.currentTarget.form as HTMLFormElement | null)?.requestSubmit();
     }
   }
@@ -82,9 +76,7 @@ export default function Chat() {
   return (
     <main className="p-8 max-w-3xl mx-auto">
       <h1 className="text-2xl font-semibold">Chat (Platzhalter)</h1>
-      <p className="mt-2">
-        Sachverhalt eingeben – Nachrichten werden gespeichert und unten angezeigt.
-      </p>
+      <p className="mt-2">Sachverhalt eingeben – Nachrichten werden gespeichert und unten angezeigt.</p>
 
       <form onSubmit={handleSubmit} className="mt-4">
         <textarea
@@ -99,7 +91,7 @@ export default function Chat() {
           <button
             type="submit"
             className="px-4 py-2 rounded bg-black text-white disabled:opacity-60"
-            disabled={sending} // nur beim Senden deaktivieren
+            disabled={sending}
           >
             {sending ? "Senden..." : "Senden"}
           </button>
@@ -128,4 +120,3 @@ export default function Chat() {
     </main>
   );
 }
-
